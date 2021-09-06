@@ -1,0 +1,146 @@
+
+```
+
+```{r}
+# Create a function called "year_get" with one argument, which is assumed 
+# to be the value of "datetime".
+# TODO: Read train data (train.csv) and save it as a data frame "data".
+data <- read.csv("train.csv")
+
+# TODO: Read test data (test.csv) and save it as a data frame "test".
+test <- read.csv("test.csv")
+
+
+  
+# TODO: Make sure that train data ("data") and test data ("test") 
+# have the same features (X variables).
+# Compared to the test data, train data should additionally contain 
+# a response variable "count".
+# Remove all the extra columns from the train set. 
+data <- data[,c(names(test),'count')]
+
+
+# TODO: Attach the data frame "data"
+attach (data)
+```
+
+Classification vs. Regression**
+
+The type of supervised learning problem is regression. Because we want to predict quantitative variable (the numeric variable of daily rental ridership), not the qualitative variable.
+## Data Preparation
+
+A critical step in data analysis is preparing the data correctly. We need to make sure that all the variables have an appropriate format and create some new variables which will come in handy later.
+
+```{r}
+# TODO: Create a function called "year_get" with one argument, which is assumed 
+# to be the value of "datetime".
+# Given a value of "datetime", this function returns a year corresponding 
+# to the date through function strsplit().
+# Make sure that year is of the type integer.
+# Other functions/packages are not allowed.
+year_get <- function(dtetime) {
+  day <- strsplit(dtetime," ") [[1]][1]
+  year <- as.integer(strsplit(day,"-") [[1]][1])
+  return(year)
+}
+
+# TODO: Apply the function "year_get" to each "datetime" through function 
+# sapply() and save the result as a new column "year" in the data frames 
+# "data" and "test".
+data$year <- sapply(data[,"datetime"], year_get)
+test$year <- sapply(test[,"datetime"],year_get)
+
+```
+
+
+```{r}
+# TODO: Create three new variables "month", "hour" (0-23), and "weekday" (1-7) 
+# based on "datetime" and add them to the "data" and "test" data frames.  
+# To do that, you can use any function/package of your liking. 
+# All three variables should be of the type integer.
+#Option 1: using strsplit as above
+#For example 
+
+month_get <- function(dtetime){
+  day <- strsplit(dtetime, " ")[[1]][1]
+  month <- as.integer(strsplit(day, "-")[[1]][2])
+return (month)
+}
+
+data$month <-sapply(data[,'datetime'],month_get)
+
+
+hour_get <-function(dtetime){
+  time <- strsplit(dtetime, " ")[[1]][2]
+  hour <- as.integer(strsplit(time, ":")[[1]][1])
+return (hour)
+}
+data$hour <-sapply(data[,'datetime'],hour_get)
+
+##Option2 : using format(strptime)
+  
+data$month <- as.integer(format(strptime(datetime,format = "%Y-%m-%d %H:%M:%S"), format = "%m"))  
+data$hour <- as.integer(format(strptime(datetime,format = "%Y-%m-%d %H:%M:%S"), format = "%H"))  
+data$weekday <- as.integer(format(strptime(datetime,format = "%Y-%m-%d %H:%M:%S"), format = "%u"))  
+
+
+test$month <- as.integer(format(strptime(test$datetime,format = "%Y-%m-%d %H:%M:%S"), format = "%m"))  
+test$hour <- as.integer(format(strptime(test$datetime,format = "%Y-%m-%d %H:%M:%S"), format = "%H"))  
+test$weekday <- as.integer(format(strptime(test$datetime,format = "%Y-%m-%d %H:%M:%S"), format = "%u"))  
+
+# TODO: Make sure that "datetime" is of the type "POSIXct" "POSIXt" in both 
+# "data" and "test" data frames. 
+data$datetime <-as.POSIXct(data[,'datetime'], tz=Sys.timezone())
+test$datetime <-as.POSIXct(test[,'datetime'], tz=Sys.timezone())
+```
+
+Make sure that the following categorical variables are of the type "factor":
+
+* season
+* holiday
+* workingday
+* weather
+* year
+* month
+* hour
+* weekday
+
+```{r}
+# TODO: Create a vector with the names of categorical variables you want 
+# to transform to factor.
+categorical <- c("season", "holiday", "workingday", "weather", "year", "month", "hour", "weekday")
+
+# TODO: Use lapply() function to transform categorical variables to factors 
+# in both "data" and "test" data sets.
+data[categorical] <- lapply(data[categorical], factor)
+test[categorical] <- lapply(test[categorical], factor)
+```
+
+## Exploring the Data
+
+Now we will concentrate on the train part of the data which we have stored as a "data" data frame. To get a better grasp of the problem, we will start from visualizing the dependent variable "count".
+
+```{r}
+# TODO: Use ggplot2 package to plot the number of bike riders ("count") over 
+# the first 10 days against time ("datetime").
+# Complete this task for the data set "data".
+# Your output should look like Figure 1.
+installed.packages("tidyverse")
+library (tidyverse)
+
+data$day <- as.integer(format(strptime(data$datetime, format = "%Y-%m-%d %H:%M:%S"), format = "%d"))
+index <- data[data$year == 2011 & data$month ==1 & data$day %in% (1:10), ]
+index <- dim(data[data$year == 2011 & data$month ==1 & data$day %in% (1:10), ])
+
+
+count_plot <-ggplot(data[1:index,c("datetime", "count")], aes(x=datetime, y = count)) + geomline() + xlab("Day")
+
+count_plot
+
+```
+
+![The number of bike riders over the first 10 days](count_against_time.png)
+
+
+There are less bike rentals on the weekends than on the weekdays. Moreover, we find 2 peaks of bike rental each day corresponding to hours when people go to and from the work.
+
